@@ -23,6 +23,7 @@ class Application extends React.Component {
   }
 
   componentDidMount() {
+    console.log(geodata)
     const map = new mapboxgl.Map({
       container: this.mapContainer,
       style: 'mapbox://styles/mapbox/streets-v11',
