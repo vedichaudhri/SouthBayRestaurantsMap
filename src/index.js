@@ -6,7 +6,7 @@ import * as serviceWorker from './serviceWorker';
 //import ReactMapboxGl, { Layer, Feature } from 'react-mapbox-gl';
 //import { csv2geojson } from 'csv2geojson';
 import mapboxgl from 'mapbox-gl';
-import geodata from './geodata.js'
+import geodata from './geodata.js';
 //import data from 'data.geojson';
 
 mapboxgl.accessToken =
@@ -26,7 +26,7 @@ class Application extends React.Component {
     console.log(geodata);
     const map = new mapboxgl.Map({
       container: this.mapContainer,
-      style: 'mapbox://styles/mapbox/streets-v11',
+      style: 'mapbox://styles/mapbox/light-v10',
       center: [this.state.lng, this.state.lat],
       zoom: this.state.zoom
     });
@@ -38,17 +38,43 @@ class Application extends React.Component {
       });
     });
 
+    map.on('load', function() {
+      map.loadImage(
+        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Location_dot_black.svg/1024px-Location_dot_black.svg.png',
+        function(error, image) {
+          if (error) throw error;
+          map.addImage('circle', image);
+          map.addSource('points', {
+            type: 'geojson',
+            data: geodata
+          });
+          map.addLayer({
+            id: 'points',
+            type: 'symbol',
+            source: 'points',
+            layout: {
+              'icon-image': 'circle',
+              'icon-size': 0.007,
+              'text-field': ['get', 'Name'],
+              'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+              'text-offset': [0, 0.6]
+            }
+          });
+        }
+      );
+    });
+
     var markerA = new mapboxgl.Marker({
       draggable: true
     })
-    .setLngLat([-122.1430195, 37.44])
-    .addTo(map);
+      .setLngLat([-122.1430195, 37.44])
+      .addTo(map);
 
     var markerB = new mapboxgl.Marker({
       draggable: true
     })
-    .setLngLat([-122.2, 37.39])
-    .addTo(map);
+      .setLngLat([-122.2, 37.39])
+      .addTo(map);
 
     function onDragEnd() {
       var lngLat = markerA.getLngLat();
