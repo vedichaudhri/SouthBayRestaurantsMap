@@ -23,7 +23,7 @@ class Application extends React.Component {
   }
 
   componentDidMount() {
-    console.log(geodata);
+    console.log(geodata)
     const map = new mapboxgl.Map({
       container: this.mapContainer,
       style: 'mapbox://styles/mapbox/light-v10',
@@ -77,8 +77,11 @@ class Application extends React.Component {
       .addTo(map);
 
     function onDragEnd() {
-      var lngLat = markerA.getLngLat();
-      console.log('Longitude: ' + lngLat.lng + '<br />Latitude: ' + lngLat.lat);
+      var lngLatA = markerA.getLngLat();
+      console.log('A: Longitude: ' + lngLatA.lng + '<br />Latitude: ' + lngLatA.lat);
+
+      var lngLatB = markerB.getLngLat();
+      console.log('B: Longitude: ' + lngLatB.lng + '<br />Latitude: ' + lngLatB.lat);
     }
 
     markerA.on('dragend', onDragEnd);
