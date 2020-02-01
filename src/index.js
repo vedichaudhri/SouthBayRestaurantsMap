@@ -6,6 +6,7 @@ import * as serviceWorker from './serviceWorker';
 //import ReactMapboxGl, { Layer, Feature } from 'react-mapbox-gl';
 //import { csv2geojson } from 'csv2geojson';
 import mapboxgl from 'mapbox-gl';
+import geodata from './geodata.js'
 //import data from 'data.geojson';
 
 mapboxgl.accessToken =
@@ -22,6 +23,7 @@ class Application extends React.Component {
   }
 
   componentDidMount() {
+    console.log(geodata);
     const map = new mapboxgl.Map({
       container: this.mapContainer,
       style: 'mapbox://styles/mapbox/streets-v11',
@@ -35,6 +37,26 @@ class Application extends React.Component {
         zoom: map.getZoom().toFixed(2)
       });
     });
+
+    var markerA = new mapboxgl.Marker({
+      draggable: true
+    })
+    .setLngLat([-122.1430195, 37.44])
+    .addTo(map);
+
+    var markerB = new mapboxgl.Marker({
+      draggable: true
+    })
+    .setLngLat([-122.2, 37.39])
+    .addTo(map);
+
+    function onDragEnd() {
+      var lngLat = markerA.getLngLat();
+      console.log('Longitude: ' + lngLat.lng + '<br />Latitude: ' + lngLat.lat);
+    }
+
+    markerA.on('dragend', onDragEnd);
+    markerB.on('dragend', onDragEnd);
   }
 
   render() {
