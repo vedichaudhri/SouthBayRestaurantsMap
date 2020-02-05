@@ -19,7 +19,13 @@ import {
 mapboxgl.accessToken =
 'pk.eyJ1IjoidmVkaWNoYXVkaHJpIiwiYSI6ImNrNjM2NGpxYjAxaG8zbW1weTNuMmxydDkifQ.2Va6SpC54bm8IkG0SGZ8lw';
 
+
+
 class Application extends React.Component {
+
+  INIT_COORDS_A = [-122.1430195, 37.44];
+  INIT_COORDS_B = [-122.2, 37.39];
+
   constructor(props) {
     super(props);
     this.state = {
@@ -51,12 +57,15 @@ class Application extends React.Component {
       });
     });
 
+    var circleA = this.createGeoJSONCircle(this.INIT_COORDS_A, 10);
+    var circleB = this.createGeoJSONCircle(this.INIT_COORDS_B, 10);
+
     map.on('load', function() {
       map.loadImage(
         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Location_dot_black.svg/1024px-Location_dot_black.svg.png',
         function(error, image) {
           if (error) throw error;
-          map.addImage('circle', image);
+          map.addImage('dot', image);
           map.addSource('points', {
             type: 'geojson',
             data: geodata
@@ -66,11 +75,32 @@ class Application extends React.Component {
             type: 'symbol',
             source: 'points',
             layout: {
-              'icon-image': 'circle',
+              'icon-image': 'dot',
               'icon-size': 0.007,
-              // 'text-field': ['get', 'Name'],
-              // 'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-              // 'text-offset': [0, 0.6]
+            }
+          });
+
+          map.addSource('circleA', circleA);
+          map.addLayer({
+            'id': 'circleA',
+            'type': 'fill',
+            'source': 'circleA',
+            'layout': {},
+            'paint': {
+              'fill-color': '#088',
+              'fill-opacity': 0.3
+            }
+          });
+
+          map.addSource('circleB', circleB);
+          map.addLayer({
+            'id': 'circleB',
+            'type': 'fill',
+            'source': 'circleB',
+            'layout': {},
+            'paint': {
+              'fill-color': '#088',
+              'fill-opacity': 0.3
             }
           });
         }
@@ -78,59 +108,70 @@ class Application extends React.Component {
     });
 
     this.handleMarkers(map);
-
-
-    // userProperties has to be enabled
-    const draw = new MapboxDraw({
-      defaultMode: "draw_circle",
-      userProperties: true,
-      modes: {
-        ...MapboxDraw.modes,
-        draw_circle  : CircleMode,
-        drag_circle  : DragCircleMode,
-        direct_select: DirectMode,
-        simple_select: SimpleSelectMode
-      }
-    });
-
-    // Add this draw object to the map when map loads
-    map.addControl(draw);
-    draw.changeMode('draw_circle', { initialRadiusInKm: 10 });
   }
+
+  // adapted from:
+  // https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js/39006388#39006388
+  createGeoJSONCircle(center, radiusInKm, points) {
+    if(!points) points = 64;
+
+    var coords = {
+      latitude: center[1],
+      longitude: center[0]
+    };
+
+    var km = radiusInKm;
+
+    var ret = [];
+    var distanceX = km/(111.320*Math.cos(coords.latitude*Math.PI/180));
+    var distanceY = km/110.574;
+
+    var theta, x, y;
+    for(var i=0; i<points; i++) {
+      theta = (i/points)*(2*Math.PI);
+      x = distanceX*Math.cos(theta);
+      y = distanceY*Math.sin(theta);
+
+      ret.push([coords.longitude+x, coords.latitude+y]);
+    }
+    ret.push(ret[0]);
+
+    return {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": [{
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [ret]
+          }
+        }]
+      }
+    };
+  };
 
   handleMarkers(map) {
     var markerA = new mapboxgl.Marker({
       draggable: true
     })
-    .setLngLat([-122.1430195, 37.44])
+    .setLngLat(this.INIT_COORDS_A)
     .addTo(map);
 
     var markerB = new mapboxgl.Marker({
       draggable: true
     })
-    .setLngLat([-122.2, 37.39])
+    .setLngLat(this.INIT_COORDS_B)
     .addTo(map);
 
-    function onDragEnd() {
-      var lngLatA = markerA.getLngLat();
-      var lngLatB = markerB.getLngLat();
-    }
+    // function onDragEnd() {
+    //   var lngLatA = markerA.getLngLat();
+    //   var lngLatB = markerB.getLngLat();
+    // }
 
-    markerA.on('dragend', onDragEnd);
-    markerB.on('dragend', onDragEnd);
+    // markerA.on('dragend', onDragEnd);
+    // markerB.on('dragend', onDragEnd);
   }
-
-
-  // getIntersect(map, markerA, markerB) {
-  //   let radiusA = 10
-  //   let radiusB = 10
-
-  //   let lngLatA = markerA.getPosition()
-  //   let lngLatB = markerB.getPosition()
-
-
-  // }
-
   
 
   render() {
