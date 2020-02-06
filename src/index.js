@@ -7,18 +7,18 @@ import * as serviceWorker from './serviceWorker';
 //import { csv2geojson } from 'csv2geojson';
 import mapboxgl from 'mapbox-gl';
 import geodata from './geodata.js';
-import MapboxDraw from '@mapbox/mapbox-gl-draw';
+import MapboxCircle from 'mapbox-gl-circle';
+
 //import data from 'data.geojson';
-import {
-  CircleMode,
-  DragCircleMode,
-  DirectMode,
-  SimpleSelectMode,
-} from 'mapbox-gl-draw-circle';
+// import {
+//   CircleMode,
+//   DragCircleMode,
+//   DirectMode,
+//   SimpleSelectMode,
+// } from 'mapbox-gl-draw-circle';
 
 mapboxgl.accessToken =
 'pk.eyJ1IjoidmVkaWNoYXVkaHJpIiwiYSI6ImNrNjM2NGpxYjAxaG8zbW1weTNuMmxydDkifQ.2Va6SpC54bm8IkG0SGZ8lw';
-
 
 
 class Application extends React.Component {
@@ -57,8 +57,12 @@ class Application extends React.Component {
       });
     });
 
-    let circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
-    console.log(circles);
+    var canvas = map.getCanvasContainer();
+    var coordinates = document.getElementById('coordinates');
+    var circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
+    // console.log(circles);
+
+
 
     map.on('load', function() {
       map.loadImage(
@@ -80,22 +84,51 @@ class Application extends React.Component {
             }
           });
 
-          map.addSource('circles', circles);
-          map.addLayer({
-            'id': 'circles',
-            'type': 'fill',
-            'source': 'circles',
-            'layout': {},
-            'paint': {
-              'fill-color': '#088',
-              'fill-opacity': 0.3
-            }
+          // map.addSource('circles', circles);
+          // map.addLayer({
+          //   'id': 'circles',
+          //   'type': 'fill',
+          //   'source': 'circles',
+          //   'layout': {},
+          //   'paint': {
+          //     'fill-color': '#088',
+          //     'fill-opacity': 0.3
+          //   }
+          // });
+
+
+          // When the cursor enters a feature in the point layer, prepare for dragging.
+          map.on('mouseenter', 'circles', function() {
+            canvas.style.cursor = 'move';
           });
+
+          map.on('mouseleave', 'circles', function() {
+            canvas.style.cursor = '';
+          });
+          
+
         }
-      );
+        );
     });
 
+
     this.handleMarkers(map);
+    this.handleCircles(map);
+  }
+
+  // radius in meters
+  handleCircles(map) {
+    var circleA = new MapboxCircle({lat: this.INIT_COORDS_A[1], lng: this.INIT_COORDS_A[0]}, 7000, {
+      editable: true,
+      minRadius: 1500,
+      fillColor: '#29AB87'
+    }).addTo(map);
+
+    var circleB = new MapboxCircle({lat: this.INIT_COORDS_B[1], lng: this.INIT_COORDS_B[0]}, 7000, {
+      editable: true,
+      minRadius: 1500,
+      fillColor: '#29AB87'
+    }).addTo(map);
   }
 
   // adapted from:
