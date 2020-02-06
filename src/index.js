@@ -9,14 +9,6 @@ import mapboxgl from 'mapbox-gl';
 import geodata from './geodata.js';
 import MapboxCircle from 'mapbox-gl-circle';
 
-//import data from 'data.geojson';
-// import {
-//   CircleMode,
-//   DragCircleMode,
-//   DirectMode,
-//   SimpleSelectMode,
-// } from 'mapbox-gl-draw-circle';
-
 mapboxgl.accessToken =
 'pk.eyJ1IjoidmVkaWNoYXVkaHJpIiwiYSI6ImNrNjM2NGpxYjAxaG8zbW1weTNuMmxydDkifQ.2Va6SpC54bm8IkG0SGZ8lw';
 
@@ -58,10 +50,8 @@ class Application extends React.Component {
     });
 
     var canvas = map.getCanvasContainer();
-    var coordinates = document.getElementById('coordinates');
-    var circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
-    // console.log(circles);
-
+    // var coordinates = document.getElementById('coordinates');
+    // var circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
 
 
     map.on('load', function() {
@@ -96,21 +86,19 @@ class Application extends React.Component {
           //   }
           // });
 
-
           // When the cursor enters a feature in the point layer, prepare for dragging.
-          map.on('mouseenter', 'circles', function() {
-            canvas.style.cursor = 'move';
-          });
+          // map.on('mouseenter', 'circles', function() {
+          //   canvas.style.cursor = 'move';
+          // });
 
-          map.on('mouseleave', 'circles', function() {
-            canvas.style.cursor = '';
-          });
+          // map.on('mouseleave', 'circles', function() {
+          //   canvas.style.cursor = '';
+          // });
           
 
         }
         );
     });
-
 
     this.handleMarkers(map);
     this.handleCircles(map);
@@ -120,6 +108,7 @@ class Application extends React.Component {
   handleCircles(map) {
     var circleA = new MapboxCircle({lat: this.INIT_COORDS_A[1], lng: this.INIT_COORDS_A[0]}, 7000, {
       editable: true,
+      clickable: false,
       minRadius: 1500,
       fillColor: '#29AB87'
     }).addTo(map);
@@ -129,37 +118,41 @@ class Application extends React.Component {
       minRadius: 1500,
       fillColor: '#29AB87'
     }).addTo(map);
+
+    circleA.on('centerchanged', function (circleObj) {
+      console.log('New center:', circleObj.getCenter());
+    });
+    circleA.once('radiuschanged', function (circleObj) {
+      console.log('New radius (once!):', circleObj.getRadius());
+    });
+    // circleA.on('click', function (mapMouseEvent) {
+    //         console.log('Click:', mapMouseEvent.point);
+    //     });
   }
 
-  // adapted from:
-  // https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js/39006388#39006388
-  calculateCircleCoords(center, radiusInKm, points) {
-    if(!points) points = 64;
+  handleMarkers(map) {
+    var markerA = new mapboxgl.Marker({
+      draggable: true
+    })
+    .setLngLat(this.INIT_COORDS_A)
+    .addTo(map);
 
-    var coords = {
-      latitude: center[1],
-      longitude: center[0]
-    };
+    var markerB = new mapboxgl.Marker({
+      draggable: true
+    })
+    .setLngLat(this.INIT_COORDS_B)
+    .addTo(map);
 
-    var km = radiusInKm;
+    // function onDragEnd() {
+    //   var lngLatA = markerA.getLngLat();
+    //   var lngLatB = markerB.getLngLat();
+    // }
 
-    var ret = [];
-    var distanceX = km/(111.320*Math.cos(coords.latitude*Math.PI/180));
-    var distanceY = km/110.574;
-
-    var theta, x, y;
-    for(var i=0; i<points; i++) {
-      theta = (i/points)*(2*Math.PI);
-      x = distanceX*Math.cos(theta);
-      y = distanceY*Math.sin(theta);
-
-      ret.push([coords.longitude+x, coords.latitude+y]);
-    }
-    ret.push(ret[0]);
-    return ret;
+    // markerA.on('dragend', onDragEnd);
+    // markerB.on('dragend', onDragEnd);
   }
 
-  createGeoJSONCircles(centerA, centerB, radiusA, radiusB) {
+  /* createGeoJSONCircles(centerA, centerB, radiusA, radiusB) {
     let coordsA = this.calculateCircleCoords(centerA, radiusA);
     let coordsB = this.calculateCircleCoords(centerB, radiusB);
 
@@ -183,30 +176,7 @@ class Application extends React.Component {
         }]
       }
     };
-  };
-
-  handleMarkers(map) {
-    var markerA = new mapboxgl.Marker({
-      draggable: true
-    })
-    .setLngLat(this.INIT_COORDS_A)
-    .addTo(map);
-
-    var markerB = new mapboxgl.Marker({
-      draggable: true
-    })
-    .setLngLat(this.INIT_COORDS_B)
-    .addTo(map);
-
-    // function onDragEnd() {
-    //   var lngLatA = markerA.getLngLat();
-    //   var lngLatB = markerB.getLngLat();
-    // }
-
-    // markerA.on('dragend', onDragEnd);
-    // markerB.on('dragend', onDragEnd);
-  }
-  
+  }; */
 
   render() {
     return (
