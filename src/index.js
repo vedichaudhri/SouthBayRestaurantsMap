@@ -57,8 +57,8 @@ class Application extends React.Component {
       });
     });
 
-    var circleA = this.createGeoJSONCircle(this.INIT_COORDS_A, 10);
-    var circleB = this.createGeoJSONCircle(this.INIT_COORDS_B, 10);
+    let circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
+    console.log(circles);
 
     map.on('load', function() {
       map.loadImage(
@@ -80,23 +80,11 @@ class Application extends React.Component {
             }
           });
 
-          map.addSource('circleA', circleA);
+          map.addSource('circles', circles);
           map.addLayer({
-            'id': 'circleA',
+            'id': 'circles',
             'type': 'fill',
-            'source': 'circleA',
-            'layout': {},
-            'paint': {
-              'fill-color': '#088',
-              'fill-opacity': 0.3
-            }
-          });
-
-          map.addSource('circleB', circleB);
-          map.addLayer({
-            'id': 'circleB',
-            'type': 'fill',
-            'source': 'circleB',
+            'source': 'circles',
             'layout': {},
             'paint': {
               'fill-color': '#088',
@@ -104,7 +92,7 @@ class Application extends React.Component {
             }
           });
         }
-        );
+      );
     });
 
     this.handleMarkers(map);
@@ -112,7 +100,7 @@ class Application extends React.Component {
 
   // adapted from:
   // https://stackoverflow.com/questions/37599561/drawing-a-circle-with-the-radius-in-miles-meters-with-mapbox-gl-js/39006388#39006388
-  createGeoJSONCircle(center, radiusInKm, points) {
+  calculateCircleCoords(center, radiusInKm, points) {
     if(!points) points = 64;
 
     var coords = {
@@ -135,6 +123,12 @@ class Application extends React.Component {
       ret.push([coords.longitude+x, coords.latitude+y]);
     }
     ret.push(ret[0]);
+    return ret;
+  }
+
+  createGeoJSONCircles(centerA, centerB, radiusA, radiusB) {
+    let coordsA = this.calculateCircleCoords(centerA, radiusA);
+    let coordsB = this.calculateCircleCoords(centerB, radiusB);
 
     return {
       "type": "geojson",
@@ -144,7 +138,14 @@ class Application extends React.Component {
           "type": "Feature",
           "geometry": {
             "type": "Polygon",
-            "coordinates": [ret]
+            "coordinates": [coordsA]
+          }
+        }, 
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [coordsB]
           }
         }]
       }
