@@ -50,54 +50,53 @@ class Application extends React.Component {
     });
 
     var canvas = map.getCanvasContainer();
-    // var coordinates = document.getElementById('coordinates');
     // var circles = this.createGeoJSONCircles(this.INIT_COORDS_A, this.INIT_COORDS_B, 10, 10);
 
-
     map.on('load', function() {
-      map.loadImage(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Location_dot_black.svg/1024px-Location_dot_black.svg.png',
-        function(error, image) {
-          if (error) throw error;
-          map.addImage('dot', image);
-          map.addSource('points', {
-            type: 'geojson',
-            data: geodata
-          });
-          map.addLayer({
-            id: 'points',
-            type: 'symbol',
-            source: 'points',
-            layout: {
-              'icon-image': 'dot',
-              'icon-size': 0.007,
-            }
-          });
-
-          // map.addSource('circles', circles);
-          // map.addLayer({
-          //   'id': 'circles',
-          //   'type': 'fill',
-          //   'source': 'circles',
-          //   'layout': {},
-          //   'paint': {
-          //     'fill-color': '#088',
-          //     'fill-opacity': 0.3
-          //   }
-          // });
-
-          // When the cursor enters a feature in the point layer, prepare for dragging.
-          // map.on('mouseenter', 'circles', function() {
-          //   canvas.style.cursor = 'move';
-          // });
-
-          // map.on('mouseleave', 'circles', function() {
-          //   canvas.style.cursor = '';
-          // });
-          
-
+      map.addSource('points', {
+        type: 'geojson',
+        data: geodata
+      });
+      map.addLayer({
+        'id': 'points',
+        'type': 'circle',
+        'source': 'points',
+        'paint': {
+          'circle-color': {
+            property: "Score",
+            stops: [
+              [41, '#FF0000'],
+              [75, '#FFFF66'],
+              [100, '#238823']
+            ]
+          }
         }
-        );
+      });
+    });
+
+    map.on('click', 'points', function(e) {
+      var coordinates = e.features[0].geometry.coordinates.slice();
+      var description = e.features[0].properties.Name;
+       
+      // Ensure that if the map is zoomed out such that multiple
+      // copies of the feature are visible, the popup appears
+      // over the copy being pointed to.
+      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+      }
+       
+      new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(description)
+        .addTo(map);
+    });
+
+    map.on('mouseenter', 'points', function() {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+     
+    map.on('mouseleave', 'points', function() {
+      map.getCanvas().style.cursor = '';
     });
 
     this.handleMarkers(map);
@@ -108,7 +107,6 @@ class Application extends React.Component {
   handleCircles(map) {
     var circleA = new MapboxCircle({lat: this.INIT_COORDS_A[1], lng: this.INIT_COORDS_A[0]}, 7000, {
       editable: true,
-      clickable: false,
       minRadius: 1500,
       fillColor: '#29AB87'
     }).addTo(map);
