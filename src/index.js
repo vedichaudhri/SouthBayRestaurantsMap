@@ -71,28 +71,24 @@ class Application extends React.Component {
         id: 'points',
         type: 'circle',
         source: 'points',
+        paint:
+        {
+          'circle-radius': 3,
+          'circle-color': ['case',
+            ['in', ['get', 'Address'],
+              ['literal', this.state.intersectionPoints]], 'blue', 'gray'],
+
+          'circle-opacity': ['case',
+            [
+              'in',
+              ['get', 'Address'],
+              ['literal', this.state.intersectionPoints]
+            ],
+            1,
+            0.5
+          ]
+        }
       });
-
-      map.setPaintProperty('points', 'circle-color', [
-        'case',
-        [
-          'in',
-          ['get', 'Address'],
-          ['literal', this.state.intersectionPoints]
-        ],
-        'green',
-        'gray'
-      ]);
-
-      map.setPaintProperty('points', 'circle-opacity', ['case',
-        [
-          'in',
-          ['get', 'Address'],
-          ['literal', this.state.intersectionPoints]
-        ],
-        1,
-        0.5
-      ]);
 
       filterBy(9, map);
       document.getElementById('slider').addEventListener('input', function (e) {
@@ -102,19 +98,16 @@ class Application extends React.Component {
     });
 
     map.on('click', 'points', function (e) {
-      var coordinates = e.features[0].geometry.coordinates.slice();
-      var description = e.features[0].properties.Name;
-
-      // Ensure that if the map is zoomed out such that multiple
-      // copies of the feature are visible, the popup appears
-      // over the copy being pointed to.
+      let coordinates = e.features[0].geometry.coordinates.slice();
+      let name = e.features[0].properties.Name;
+      let score = "Safety Score: " + e.features[0].properties.Score;
       while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
       new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(description)
+        .setHTML('<h4>' + name + '</h4><p>' + score + '</p>')
         .addTo(map);
     });
 
@@ -174,7 +167,7 @@ class Application extends React.Component {
               ['get', 'Address'],
               ['literal', this.state.intersectionPoints]
             ],
-            'green',
+            'blue',
             'gray'
           ]);
           map.setPaintProperty('points', 'circle-opacity', ['case',
@@ -189,6 +182,7 @@ class Application extends React.Component {
         }
       );
     });
+
     circleA.on('radiuschanged', circleObj => {
       this.setState(
         {
@@ -208,7 +202,7 @@ class Application extends React.Component {
               ['get', 'Address'],
               ['literal', this.state.intersectionPoints]
             ],
-            'green',
+            'blue',
             'gray'
           ]);
           map.setPaintProperty('points', 'circle-opacity', ['case',
@@ -248,7 +242,7 @@ class Application extends React.Component {
               ['get', 'Address'],
               ['literal', this.state.intersectionPoints]
             ],
-            'green',
+            'blue',
             'gray'
           ]);
           map.setPaintProperty('points', 'circle-opacity', ['case',
@@ -263,7 +257,7 @@ class Application extends React.Component {
         }
       );
     });
-    
+
     circleB.on('radiuschanged', circleObj => {
       if (circleObj.getRadius() !== null) {
         this.setState(
@@ -271,7 +265,7 @@ class Application extends React.Component {
             circleB_radius: circleObj.getRadius(),
             intersectionPoints: this.getIntersectionPoints(
               this.state.circleA_center,
-              circleObj.getRadius(),
+              this.state.circleA_radius,
               this.state.circleB_center,
               circleObj.getRadius()
             )
@@ -284,7 +278,7 @@ class Application extends React.Component {
                 ['get', 'Address'],
                 ['literal', this.state.intersectionPoints]
               ],
-              'green',
+              'blue',
               'gray'
             ]);
             map.setPaintProperty('points', 'circle-opacity', ['case',
@@ -350,8 +344,8 @@ class Application extends React.Component {
           </div>
         </div>
         <div ref={el => (this.mapContainer = el)} className="mapContainer" />
-        <div class="map-overlay top">
-          <div class="map-overlay-inner">
+        <div className="map-overlay top">
+          <div className="map-overlay-inner">
             <h2>Filter</h2>
             <label id="safety_score_range"></label>
             <input
