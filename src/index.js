@@ -13,8 +13,7 @@ mapboxgl.accessToken =
 function filterBy(num, map) {
   var filters = ['>=', 'Score', num];
   map.setFilter('points', filters);
-
-  document.getElementById('safety_score_range').textContent = `Score >= ${num}`; //safety_score[num];
+  document.getElementById('safety_score_range').textContent = `Safety Score >= ${num}`;
 }
 
 class Application extends React.Component {
@@ -22,6 +21,7 @@ class Application extends React.Component {
     super(props);
     this.handleCircles = this.handleCircles.bind(this);
     this.getIntersectionPoints = this.getIntersectionPoints.bind(this);
+    this.setPointColors = this.setPointColors.bind(this);
     this.state = {
       lng: -122.1430195,
       lat: 37.4418834,
@@ -32,7 +32,7 @@ class Application extends React.Component {
       circleB_radius: 7000,
       intersectionPoints: this.getIntersectionPoints(
         [-122.1430195, 37.44],
-        7000,
+        7000, // radius in meters
         [-122.2, 37.39],
         7000
       )
@@ -41,9 +41,35 @@ class Application extends React.Component {
 
   componentDidMount() {
     var bounds = [
-      [-123.0397, 37.024], // Southwest coordinates
-      [-120.881, 37.933033] // Northeast coordinates
+      [-123.5397, 36.724], // Southwest coordinates
+      [-121.081, 38.333033] // Northeast coordinates
     ];
+
+    var circle_labels = {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': {
+            'description': 'A'
+          },
+          'geometry': {
+            'type': 'Point',
+            'coordinates': this.state.circleA_center
+          }
+        },
+        {
+          'type': 'Feature',
+          'properties': {
+            'description': 'B'
+          },
+          'geometry': {
+            'type': 'Point',
+            'coordinates': this.state.circleB_center
+          }
+        }
+      ]
+    }
 
     const map = new mapboxgl.Map({
       container: this.mapContainer,
@@ -73,10 +99,10 @@ class Application extends React.Component {
         source: 'points',
         paint:
         {
-          'circle-radius': 3,
+          'circle-radius': 3.5,
           'circle-color': ['case',
             ['in', ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]], 'blue', 'gray'],
+              ['literal', this.state.intersectionPoints]], 'black', 'gray'],
 
           'circle-opacity': ['case',
             [
@@ -89,6 +115,22 @@ class Application extends React.Component {
           ]
         }
       });
+
+      map.addSource('circle_labels', {
+        type: 'geojson',
+        data: circle_labels,
+      });
+
+      map.addLayer({
+        id: 'circle_labels', type: 'symbol', 'source': 'circle_labels', 'layout': {
+          'text-field': ['get', 'description'],
+          'text-size': 20,
+          'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+          'text-radial-offset': 0.4,
+          'text-justify': 'auto',
+          "text-font": ["Arial Unicode MS Bold"],
+        }, 'paint': { 'text-color': '#FF6600' }
+      })
 
       filterBy(9, map);
       document.getElementById('slider').addEventListener('input', function (e) {
@@ -122,26 +164,74 @@ class Application extends React.Component {
     this.handleCircles(map);
   }
 
-  // radius in meters
+  setLabelPosition(map) {
+    var circle_labels = {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': {
+            'description': 'A'
+          },
+          'geometry': {
+            'type': 'Point',
+            'coordinates': this.state.circleA_center
+          }
+        },
+        {
+          'type': 'Feature',
+          'properties': {
+            'description': 'B'
+          },
+          'geometry': {
+            'type': 'Point',
+            'coordinates': this.state.circleB_center
+          }
+        }
+      ]
+    }
+    map.getSource('circle_labels').setData(circle_labels);
+  }
+
+  setPointColors(map) {
+    map.setPaintProperty('points', 'circle-color', [
+      'case',
+      [
+        'in',
+        ['get', 'Address'],
+        ['literal', this.state.intersectionPoints]
+      ],
+      'black',
+      'gray'
+    ]);
+    map.setPaintProperty('points', 'circle-opacity', ['case',
+      [
+        'in',
+        ['get', 'Address'],
+        ['literal', this.state.intersectionPoints]
+      ],
+      1,
+      0.5
+    ]);
+  }
+
   handleCircles(map) {
+    let circleProperties = {
+      editable: true,
+      minRadius: 1500,
+      fillColor: '#29AB87',
+      fillOpacity: 0.2
+    };
     var circleA = new MapboxCircle(
       { lat: this.state.circleA_center[1], lng: this.state.circleA_center[0] },
       this.state.circleA_radius,
-      {
-        editable: true,
-        minRadius: 1500,
-        fillColor: '#29AB87'
-      }
+      circleProperties
     ).addTo(map);
 
     var circleB = new MapboxCircle(
       { lat: this.state.circleB_center[1], lng: this.state.circleB_center[0] },
       this.state.circleB_radius,
-      {
-        editable: true,
-        minRadius: 1500,
-        fillColor: '#29AB87'
-      }
+      circleProperties
     ).addTo(map);
 
     circleA.on('centerchanged', circleObj => {
@@ -160,25 +250,8 @@ class Application extends React.Component {
           )
         },
         () => {
-          map.setPaintProperty('points', 'circle-color', [
-            'case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            'blue',
-            'gray'
-          ]);
-          map.setPaintProperty('points', 'circle-opacity', ['case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            1,
-            0.5
-          ]);
+          this.setPointColors(map);
+          this.setLabelPosition(map);
         }
       );
     });
@@ -195,25 +268,8 @@ class Application extends React.Component {
           )
         },
         () => {
-          map.setPaintProperty('points', 'circle-color', [
-            'case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            'blue',
-            'gray'
-          ]);
-          map.setPaintProperty('points', 'circle-opacity', ['case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            1,
-            0.5
-          ]);
+          this.setPointColors(map);
+          this.setLabelPosition(map);
         }
       );
     });
@@ -235,25 +291,8 @@ class Application extends React.Component {
           )
         },
         () => {
-          map.setPaintProperty('points', 'circle-color', [
-            'case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            'blue',
-            'gray'
-          ]);
-          map.setPaintProperty('points', 'circle-opacity', ['case',
-            [
-              'in',
-              ['get', 'Address'],
-              ['literal', this.state.intersectionPoints]
-            ],
-            1,
-            0.5
-          ])
+          this.setPointColors(map);
+          this.setLabelPosition(map);
         }
       );
     });
@@ -269,31 +308,13 @@ class Application extends React.Component {
               this.state.circleB_center,
               circleObj.getRadius()
             )
-          },
-          () => {
-            map.setPaintProperty('points', 'circle-color', [
-              'case',
-              [
-                'in',
-                ['get', 'Address'],
-                ['literal', this.state.intersectionPoints]
-              ],
-              'blue',
-              'gray'
-            ]);
-            map.setPaintProperty('points', 'circle-opacity', ['case',
-              [
-                'in',
-                ['get', 'Address'],
-                ['literal', this.state.intersectionPoints]
-              ],
-              1,
-              0.5
-            ]);
-          }
-        );
+          }, () => {
+            this.setPointColors(map);
+            this.setLabelPosition(map);
+          })
       }
-    });
+    }
+    );
   }
 
   getIntersectionPoints(
@@ -338,10 +359,11 @@ class Application extends React.Component {
     return (
       <div>
         <div className="sidebarStyle">
-          <div>
-            Longitude: {this.state.lng} | Latitude: {this.state.lat} | Zoom:{' '}
-            {this.state.zoom}
-          </div>
+          South Bay Restaurants
+        </div>
+        <div className="sidebarTwoStyle">
+          Point A radius: {this.state.circleA_radius / 1000} km {'\n'}
+          Point B radius: {this.state.circleB_radius / 1000} km
         </div>
         <div ref={el => (this.mapContainer = el)} className="mapContainer" />
         <div className="map-overlay top">
