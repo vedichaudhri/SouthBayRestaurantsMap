@@ -218,7 +218,7 @@ class Application extends React.Component {
   handleCircles(map) {
     let circleProperties = {
       editable: true,
-      minRadius: 1500,
+      minRadius: 500,
       fillColor: '#29AB87',
       fillOpacity: 0.2
     };
